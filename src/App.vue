@@ -57,7 +57,7 @@
                         </div>
                     </td>
                     <td>{{ formatLongString(email.subject, 60) }}</td>
-                    <td>{{ email.date }}</td>
+                    <td>{{ formatDate(email.date) }}</td>
                 </tr>
             </tbody>
         </table>
@@ -77,6 +77,12 @@ import { emailList } from "./emailList";
 export default defineComponent({
     name: "App",
     setup() {
+        console.log(
+            dayjs(
+                dayjs().toDate().getTime() -
+                    dayjs(emailList[6].date).toDate().getTime()
+            ).format()
+        );
         const MAX_EMAIL_CHAR_SIZE = 20;
 
         const EmailShowingModeList: {
@@ -130,6 +136,21 @@ export default defineComponent({
             }[mode];
         }
 
+        function formatDate(date: string): string {
+            if (
+                Date.now() - new Date(date).getTime() <
+                1000 * 60 * 60 * 24
+            ) {
+                return dayjs(date).format("HH:mm");
+            }
+            else if(dayjs(date).year() === dayjs().year()){
+                return dayjs(date).format("MMM DD")
+            }
+            else{
+                return dayjs(date).format("YYYY/MM/DD")
+            };
+        }
+
         return {
             emailList,
 
@@ -141,6 +162,8 @@ export default defineComponent({
             formatLongString,
 
             MAX_EMAIL_CHAR_SIZE,
+
+            formatDate,
         };
     },
 });
