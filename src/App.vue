@@ -11,9 +11,52 @@
             </thead>
             <tbody>
                 <tr v-for="email in emailList" :key="email.key">
-                    <td>{{ email.from }}</td>
-                    <td>{{ email.to }}</td>
-                    <td>{{ email.subject }}</td>
+                    <td>
+                        {{
+                            formatLongString(
+                                email.from,
+                                MAX_EMAIL_CHAR_SIZE
+                            )
+                        }}
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span
+                                style="white-space: pre"
+                                class="mr-3"
+                            >
+                                {{
+                                    formatEmails(
+                                        email.to,
+                                        EmailShowingModeList[
+                                            email.key
+                                        ]
+                                    )
+                                }}
+                            </span>
+                            <button
+                                v-if="
+                                    email.to.length > 1 &&
+                                    EmailShowingModeList[
+                                        email.key
+                                    ] === EmailShowingMode.SHOW_ONE
+                                "
+                                style="
+                                    white-space: nowrap;
+                                    padding: 2px;
+                                    line-height: 1;
+                                "
+                                @click="
+                                    EmailShowingModeList[email.key] =
+                                        EmailShowingMode.SHOW_ALL
+                                "
+                                class="btn btn-secondary btn-sm"
+                            >
+                                + {{ email.to.length - 1 }}
+                            </button>
+                        </div>
+                    </td>
+                    <td>{{ formatLongString(email.subject, 60) }}</td>
                     <td>{{ email.date }}</td>
                 </tr>
             </tbody>
@@ -21,90 +64,93 @@
     </div>
 </template>
 
-<script>
+<script lang="ts">
 import "./lib/bootstrap.min.css";
 
-import { defineComponent } from "vue";
+import dayjs, { ConfigType } from "dayjs";
+import { defineComponent, reactive, ReactiveEffect } from "vue";
+
+import { EmailShowingMode } from "./model";
+
+import { emailList } from "./emailList";
 
 export default defineComponent({
     name: "App",
     setup() {
-        const emailList = [
-            {
-                from: "aaa@example.com",
-                to: ["zzz.zzz@example.com"],
-                subject: "[ HR-888 ] Notice of official announcement",
-                date: "",
-                key: "1",
-            },
-            {
-                from: "bbb.bbbb@examasd.qwe",
-                to: ["yyy@example.com"],
-                subject: '[web:333] "Web Contact"',
-                date: "",
-                key: "2",
-            },
-            {
-                from: "ccc@example.com",
-                to: ["xxx@example.com", "yyqde@example.info"],
-                subject: "Happy New Year! Greetings for the New Year.",
-                date: "",
-                key: "3",
-            },
-            {
-                from: "ddd.dddd@example.xyz",
-                to: ["vvv.vvv@example.com", "jja.asd@example.me"],
-                subject: "[HR-887(Revised: Office Expansion Project Team)] Notice of off skjfhelx slfjhqw faslfkhqwev dsafqe khsf.",
-                date: "",
-                key: "4",
-            },
-            {
-                from: "eee@example.com",
-                to: ["sss@example.com", "kljasd@example.me", "poqew@example.org"],
-                subject: "[Github] Logout page",
-                date: "",
-                key: "5",
-            },
-            {
-                from: "fff.ffff@example.co",
-                to: ["qqq.qqq@example.com"],
-                subject: "[dev] Postfix 3.1.12 / 3.2.9 / 3.3.4 / 3.4.5",
-                date: "",
-                key: "6",
-            },
-            {
-                from: "ggg@example.com",
-                to: ["ppp@example.com"],
-                subject: "Re: [Github] Brush-up on loading animation",
-                date: "",
-                key: "7",
-            },
-            {
-                from: "hhh.hhh@example.com",
-                to: ["ooo.ooo@example.com"],
-                subject: "Workplace Summary for sample, Inc.: Jun 2 - Jun 9",
-                date: "",
-                key: "8",
-            },
-            {
-                from: "iii@example.com",
-                to: ["nnn@example.com"],
-                subject: "I love you",
-                date: "",
-                key: "9",
-            },
-            {
-                from: "qwewqasd@dsf.asdf",
-                to: ["asd@dsqwef@dsaf.asdf"],
-                subject: "[info:888] ABC EQUIPMENT COMPANY",
-                date: "",
-                key: "10",
-            },
-        ];
+        const MAX_EMAIL_CHAR_SIZE = 20;
+
+        const EmailShowingModeList: {
+            [index: string]: EmailShowingMode;
+        } = reactive(
+            emailList.reduce((result, currEmail) => {
+                return {
+                    ...result,
+                    [currEmail.key]: EmailShowingMode.SHOW_ONE,
+                };
+            }, {})
+        );
+
+        function formatLongString(
+            str: string,
+            maxSize: number
+        ): string {
+            return str
+                .slice(0, maxSize)
+                .concat(str.length > maxSize ? "..." : "");
+        }
+
+        function formatEmails(
+            list: string[],
+            mode: EmailShowingMode
+        ): string {
+            // u could add cache here
+            return {
+                [EmailShowingMode.SHOW_ALL]: list
+                    .map((email) => {
+                        return formatLongString(
+                            email,
+                            MAX_EMAIL_CHAR_SIZE
+                        );
+                    })
+                    .join(", \n"),
+                [EmailShowingMode.SHOW_ONE]:
+                    list.length > 1
+                        ? formatLongString(
+                              list[0],
+                              MAX_EMAIL_CHAR_SIZE
+                          ).concat(
+                              list[0].length > MAX_EMAIL_CHAR_SIZE
+                                  ? ""
+                                  : ", ..."
+                          )
+                        : formatLongString(
+                              list[0],
+                              MAX_EMAIL_CHAR_SIZE
+                          ),
+            }[mode];
+        }
 
         return {
             emailList,
+
+            EmailShowingMode,
+            EmailShowingModeList,
+
+            formatEmails,
+
+            formatLongString,
+
+            MAX_EMAIL_CHAR_SIZE,
         };
     },
 });
 </script>
+
+<style>
+.table td {
+    vertical-align: middle;
+}
+.table {
+    text-align: left;
+}
+</style>
