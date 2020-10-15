@@ -19,13 +19,18 @@
                                         : undefined,
                             }"
                             @click="
-                                sortOrder = {
-                                    up: 'down',
-                                    down: 'up',
-                                }[sortOrder]
+                                changeSort(
+                                    'order',
+                                    {
+                                        up: 'down',
+                                        down: 'up',
+                                    }[sortOrder]
+                                )
                             "
                         />
-                        <span @click="sortField = 'from'">From</span>
+                        <span @click="changeSort('field', 'from')">
+                            From
+                        </span>
                     </th>
                     <th scope="col">To</th>
                     <th scope="col">Subject</th>
@@ -41,13 +46,18 @@
                                         : undefined,
                             }"
                             @click="
-                                sortOrder = {
-                                    up: 'down',
-                                    down: 'up',
-                                }[sortOrder]
+                                changeSort(
+                                    'order',
+                                    {
+                                        up: 'down',
+                                        down: 'up',
+                                    }[sortOrder]
+                                )
                             "
                         />
-                        <span @click="sortField = 'date'">Date</span>
+                        <span @click="changeSort('field', 'date')">
+                            Date
+                        </span>
                     </th>
                 </tr>
             </thead>
@@ -120,6 +130,7 @@ import {
     watch,
     ref,
 } from "vue";
+import { useRouter } from "vue-router";
 
 import { EmailShowingMode, sortType, sortOrderType } from "./models";
 
@@ -128,14 +139,12 @@ import { emailList } from "./emailList";
 export default defineComponent({
     name: "App",
     setup() {
+        const router = useRouter();
 
         const tableData = ref(emailList);
 
-
-
         const sortField = ref<sortType>("date");
         const sortOrder = ref<sortOrderType>("down");
-
         function sortFunc(
             sortField: sortType,
             sortOrder: sortOrderType,
@@ -168,7 +177,22 @@ export default defineComponent({
                 }[sortOrder];
             }
         }
-
+        function changeSort(
+            key: "field" | "order",
+            value: sortType | sortOrderType
+        ) {
+            if (key === "field") {
+                sortField.value = value as sortType;
+            } else if (key === "order") {
+                sortOrder.value = value as sortOrderType;
+            }
+            router.push({
+                query: {
+                    ...router.currentRoute.value.query,
+                    sort: `${sortField.value}-${sortOrder.value}`,
+                },
+            });
+        }
         watch(
             [sortField, sortOrder],
             ([sField, sOrder]) => {
@@ -196,11 +220,8 @@ export default defineComponent({
             { immediate: true }
         );
 
-
-
         const datePickerRef = ref(null);
         const dateRange = ref("");
-
         onMounted(() => {
             flatpickr(datePickerRef.value, {
                 mode: "range",
@@ -213,12 +234,39 @@ export default defineComponent({
                 },
             });
         });
-
+        const stopRouterWatcher = watch(
+            router.currentRoute,
+            (value) => {
+                if (value.query.date) {
+                    dateRange.value = (value.query
+                        .date as string).replace("-", " to ");
+                }
+                if (value.query.sort) {
+                    [sortField.value, sortOrder.value] = (value.query
+                        .sort as string).split("-") as [
+                        sortType,
+                        sortOrderType
+                    ];
+                }
+                stopRouterWatcher();
+            }
+        );
         watch(dateRange, (value) => {
             if (!value) {
                 tableData.value = emailList;
+                const query = { ...router.currentRoute.value.query };
+                delete query.date;
+                router.push({
+                    query,
+                });
             } else if (value.includes("to")) {
                 const [startDate, endDate] = value.split(" to ");
+                router.push({
+                    query: {
+                        ...router.currentRoute.value.query,
+                        date: value.replace(" to ", "-"),
+                    },
+                });
                 tableData.value = emailList.filter((email) => {
                     return (
                         !dayjs(email.date).isBefore(
@@ -229,8 +277,6 @@ export default defineComponent({
                 });
             }
         });
-
-        
 
         const MAX_EMAIL_CHAR_SIZE = 20;
 
@@ -258,7 +304,7 @@ export default defineComponent({
             list: string[],
             mode: EmailShowingMode
         ): string {
-            // u could add cache here
+            // add cache here
             return {
                 [EmailShowingMode.SHOW_ALL]: list
                     .map((email) => {
@@ -316,8 +362,10 @@ export default defineComponent({
             dateRange,
 
             tableData,
+
             sortField,
             sortOrder,
+            changeSort,
         };
     },
 });
