@@ -7,10 +7,48 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th scope="col">From</th>
+                    <th scope="col">
+                        <img
+                            v-if="sortField === 'from'"
+                            src="./assets/arrow_1.svg"
+                            :style="{
+                                width: '10px',
+                                transform:
+                                    sortOrder === 'down'
+                                        ? 'rotate(180deg)'
+                                        : undefined,
+                            }"
+                            @click="
+                                sortOrder = {
+                                    up: 'down',
+                                    down: 'up',
+                                }[sortOrder]
+                            "
+                        />
+                        <span @click="sortField = 'from'">From</span>
+                    </th>
                     <th scope="col">To</th>
                     <th scope="col">Subject</th>
-                    <th scope="col">Date</th>
+                    <th scope="col">
+                        <img
+                            v-if="sortField === 'date'"
+                            src="./assets/arrow_1.svg"
+                            :style="{
+                                width: '10px',
+                                transform:
+                                    sortOrder === 'down'
+                                        ? 'rotate(180deg)'
+                                        : undefined,
+                            }"
+                            @click="
+                                sortOrder = {
+                                    up: 'down',
+                                    down: 'up',
+                                }[sortOrder]
+                            "
+                        />
+                        <span @click="sortField = 'date'">Date</span>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -83,14 +121,83 @@ import {
     ref,
 } from "vue";
 
-import { EmailShowingMode } from "./model";
+import { EmailShowingMode, sortType, sortOrderType } from "./models";
 
 import { emailList } from "./emailList";
 
 export default defineComponent({
     name: "App",
     setup() {
+
         const tableData = ref(emailList);
+
+
+
+        const sortField = ref<sortType>("date");
+        const sortOrder = ref<sortOrderType>("down");
+
+        function sortFunc(
+            sortField: sortType,
+            sortOrder: sortOrderType,
+            firstEl,
+            secondEl
+        ): number {
+            if (sortField === "date") {
+                return {
+                    up: dayjs(firstEl[sortField]).diff(
+                        dayjs(secondEl[sortField])
+                    ),
+                    down: dayjs(secondEl[sortField]).diff(
+                        dayjs(firstEl[sortField])
+                    ),
+                }[sortOrder];
+            } else {
+                return {
+                    up:
+                        firstEl[sortField] > secondEl[sortField]
+                            ? -1
+                            : firstEl[sortField] < secondEl[sortField]
+                            ? 1
+                            : 0,
+                    down:
+                        firstEl[sortField] < secondEl[sortField]
+                            ? -1
+                            : firstEl[sortField] > secondEl[sortField]
+                            ? 1
+                            : 0,
+                }[sortOrder];
+            }
+        }
+
+        watch(
+            [sortField, sortOrder],
+            ([sField, sOrder]) => {
+                let temp;
+                tableData.value.sort((firstEl, secondEl) => {
+                    temp = sortFunc(
+                        sField as sortType,
+                        sOrder as sortOrderType,
+                        firstEl,
+                        secondEl
+                    );
+                    if (temp === 0) {
+                        temp = sortFunc(
+                            { date: "from", from: "date" }[
+                                sField
+                            ] as sortType,
+                            sOrder as sortOrderType,
+                            firstEl,
+                            secondEl
+                        );
+                    }
+                    return temp;
+                });
+            },
+            { immediate: true }
+        );
+
+
+
         const datePickerRef = ref(null);
         const dateRange = ref("");
 
@@ -184,13 +291,11 @@ export default defineComponent({
                 1000 * 60 * 60 * 24
             ) {
                 return dayjs(date).format("HH:mm");
+            } else if (dayjs(date).year() === dayjs().year()) {
+                return dayjs(date).format("MMM DD");
+            } else {
+                return dayjs(date).format("YYYY/MM/DD");
             }
-            else if(dayjs(date).year() === dayjs().year()){
-                return dayjs(date).format("MMM DD")
-            }
-            else{
-                return dayjs(date).format("YYYY/MM/DD")
-            };
         }
 
         return {
@@ -211,6 +316,8 @@ export default defineComponent({
             dateRange,
 
             tableData,
+            sortField,
+            sortOrder,
         };
     },
 });
