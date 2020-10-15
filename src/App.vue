@@ -1,5 +1,9 @@
 <template>
     <div style="max-width: 1200px" class="mx-auto">
+        <button class="btn btn-sm" @click="dateRange = ''">
+            close
+        </button>
+        <input ref="datePickerRef" v-model="dateRange" type="text" />
         <table class="table">
             <thead>
                 <tr>
@@ -10,7 +14,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="email in emailList" :key="email.key">
+                <tr v-for="email in tableData" :key="email.key">
                     <td>
                         {{
                             formatLongString(
@@ -66,9 +70,18 @@
 
 <script lang="ts">
 import "./lib/bootstrap.min.css";
+import "flatpickr/dist/flatpickr.min.css";
 
-import dayjs, { ConfigType } from "dayjs";
-import { defineComponent, reactive, ReactiveEffect } from "vue";
+import flatpickr from "flatpickr";
+import dayjs from "dayjs";
+import {
+    defineComponent,
+    reactive,
+    onMounted,
+    watchEffect,
+    watch,
+    ref,
+} from "vue";
 
 import { EmailShowingMode } from "./model";
 
@@ -77,12 +90,41 @@ import { emailList } from "./emailList";
 export default defineComponent({
     name: "App",
     setup() {
-        console.log(
-            dayjs(
-                dayjs().toDate().getTime() -
-                    dayjs(emailList[6].date).toDate().getTime()
-            ).format()
-        );
+        const tableData = ref(emailList);
+        const datePickerRef = ref(null);
+        const dateRange = ref("");
+
+        onMounted(() => {
+            flatpickr(datePickerRef.value, {
+                mode: "range",
+                dateFormat: "Y/m/d",
+                onClose(dateArray) {
+                    if (dateArray.length <= 1) {
+                        tableData.value = emailList;
+                        dateRange.value = "";
+                    }
+                },
+            });
+        });
+
+        watch(dateRange, (value) => {
+            if (!value) {
+                tableData.value = emailList;
+            } else if (value.includes("to")) {
+                const [startDate, endDate] = value.split(" to ");
+                tableData.value = emailList.filter((email) => {
+                    return (
+                        !dayjs(email.date).isBefore(
+                            dayjs(startDate)
+                        ) &&
+                        !dayjs(email.date).isAfter(dayjs(endDate))
+                    );
+                });
+            }
+        });
+
+        
+
         const MAX_EMAIL_CHAR_SIZE = 20;
 
         const EmailShowingModeList: {
@@ -164,6 +206,11 @@ export default defineComponent({
             MAX_EMAIL_CHAR_SIZE,
 
             formatDate,
+
+            datePickerRef,
+            dateRange,
+
+            tableData,
         };
     },
 });

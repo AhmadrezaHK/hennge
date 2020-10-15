@@ -1,4 +1,4 @@
-import { Email } from "./model";
+import { Email } from "./models";
 import dayjs from "dayjs";
 
 const emailList: Email[] = [
