@@ -4,6 +4,7 @@ export interface Email {
     subject: string;
     date: string;
     key: string;
+    attachment?: string;
 }
 
 export enum EmailShowingMode {

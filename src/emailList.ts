@@ -22,6 +22,7 @@ const emailList: Email[] = [
         subject: "Happy New Year! Greetings for the New Year.",
         date: "",
         key: "3",
+        attachment: "/src/assets/Ahmadreza.Hoseinkhani_resume.pdf",
     },
     {
         from: "ddd.dddd@example.xyz",
@@ -51,6 +52,7 @@ const emailList: Email[] = [
         subject: "[dev] Postfix 3.1.12 / 3.2.9 / 3.3.4 / 3.4.5",
         date: "",
         key: "6",
+        attachment: "/src/assets/Ahmadreza.Hoseinkhani_resume.pdf",
     },
     {
         from: "ggg@example.com",
@@ -72,6 +74,7 @@ const emailList: Email[] = [
         subject: "I love you",
         date: "",
         key: "9",
+        attachment: "/src/assets/Ahmadreza.Hoseinkhani_resume.pdf",
     },
     {
         from: "qwewqasd@dsf.asdf",
@@ -98,7 +101,10 @@ emailList.forEach((email, index) => {
         return;
     } else if (index < 6) {
         email.date = dayjs()
-            .subtract(Math.floor(Math.random() * 24 * 30 * 12 + 24), "hour")
+            .subtract(
+                Math.floor(Math.random() * 24 * 30 * 12 + 24),
+                "hour"
+            )
             .subtract(Math.floor(Math.random() * 60), "minute")
             .format("YYYY-MM-DDTHH:mm:ss");
         return;
