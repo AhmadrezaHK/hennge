@@ -79,67 +79,96 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="email in tableData" :key="email.key">
-                    <td>
-                        {{
-                            formatLongString(
-                                email.from,
-                                MAX_EMAIL_CHAR_SIZE
-                            )
-                        }}
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span
-                                style="white-space: pre"
-                                class="mr-3"
-                            >
-                                {{
-                                    formatEmails(
-                                        email.to,
+                <template v-for="email in tableData" :key="email.key">
+                    <tr
+                        @click="
+                            isShowEmailBody[
+                                email.key
+                            ] = !isShowEmailBody[email.key]
+                        "
+                    >
+                        <td>
+                            {{
+                                formatLongString(
+                                    email.from,
+                                    MAX_EMAIL_CHAR_SIZE
+                                )
+                            }}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span
+                                    style="white-space: pre"
+                                    class="mr-3"
+                                >
+                                    {{
+                                        formatEmails(
+                                            email.to,
+                                            EmailShowingModeList[
+                                                email.key
+                                            ]
+                                        )
+                                    }}
+                                </span>
+                                <button
+                                    v-if="
+                                        email.to.length > 1 &&
                                         EmailShowingModeList[
                                             email.key
-                                        ]
-                                    )
-                                }}
-                            </span>
-                            <button
-                                v-if="
-                                    email.to.length > 1 &&
-                                    EmailShowingModeList[
-                                        email.key
-                                    ] === EmailShowingMode.SHOW_ONE
-                                "
-                                style="
-                                    white-space: nowrap;
-                                    padding: 2px;
-                                    line-height: 1;
-                                "
-                                @click="
-                                    EmailShowingModeList[email.key] =
-                                        EmailShowingMode.SHOW_ALL
-                                "
-                                class="btn btn-secondary btn-sm"
+                                        ] ===
+                                            EmailShowingMode.SHOW_ONE
+                                    "
+                                    style="
+                                        white-space: nowrap;
+                                        padding: 2px;
+                                        line-height: 1;
+                                    "
+                                    @click="
+                                        EmailShowingModeList[
+                                            email.key
+                                        ] = EmailShowingMode.SHOW_ALL
+                                    "
+                                    class="btn btn-secondary btn-sm"
+                                >
+                                    + {{ email.to.length - 1 }}
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            {{ formatLongString(email.subject, 60) }}
+                        </td>
+                        <td class="date-cell">
+                            <a
+                                v-if="email.attachment"
+                                :href="email.attachment"
+                                download="resume.pdf"
                             >
-                                + {{ email.to.length - 1 }}
-                            </button>
-                        </div>
-                    </td>
-                    <td>{{ formatLongString(email.subject, 60) }}</td>
-                    <td class="date-cell">
-                        <a
-                            v-if="email.attachment"
-                            :href="email.attachment"
-                            download="resume.pdf"
-                        >
-                            <img
-                                src="./assets/icon_clip.svg"
-                                alt="attachment"
-                            />
-                        </a>
-                        {{ formatDate(email.date) }}
-                    </td>
-                </tr>
+                                <img
+                                    src="./assets/icon_clip.svg"
+                                    alt="attachment"
+                                />
+                            </a>
+                            {{ formatDate(email.date) }}
+                        </td>
+                    </tr>
+                    <tr
+                        :class="[
+                            'collapse',
+                            { show: isShowEmailBody[email.key] },
+                        ]"
+                    >
+                        <td colspan="4">
+                            <div class="w-75">
+                                Anim pariatur cliche reprehenderit,
+                                enim eiusmod high life accusamus terry
+                                richardson ad squid. Nihil anim
+                                keffiyeh helvetica, craft beer labore
+                                wes anderson cred nesciunt sapiente ea
+                                proident.
+                            </div>
+                        </td>
+                    </tr>
+                </template>
                 <tr v-if="!tableData.length" class="empty-table">
                     <img
                         src="./assets/logo.png"
@@ -380,6 +409,12 @@ export default defineComponent({
             }
         }
 
+        const isShowEmailBody = ref(
+            emailList.reduce((prev, curr) => {
+                return { ...prev, [curr.key]: false };
+            }, {})
+        );
+
         return {
             emailList,
 
@@ -402,6 +437,8 @@ export default defineComponent({
             sortField,
             sortOrder,
             changeSort,
+
+            isShowEmailBody,
         };
     },
 });
@@ -417,9 +454,12 @@ $light-color: #dee2e6;
     tbody {
         tr {
             cursor: pointer;
-            &:hover {
+            &:not(.collapse):hover {
                 background-color: #f6f8fa;
                 color: #0839de;
+            }
+            &.collapse td{
+                border-top: none;
             }
         }
     }
@@ -516,7 +556,7 @@ $light-color: #dee2e6;
         display: flex;
         tr {
             width: 100%;
-            border-bottom: 2px solid $light-color;
+            border-bottom: none;
             border-top: 2px solid $light-color;
         }
         th {
@@ -536,10 +576,10 @@ $light-color: #dee2e6;
     tbody {
         display: flex;
         flex-direction: column;
-        tr {
+        tr:not(.collapse) {
             display: flex;
             flex-direction: column;
-            border-bottom: 2px solid $light-color;
+            border-top: 2px solid $light-color;
             position: relative;
             padding-top: 25px;
             &::after {
