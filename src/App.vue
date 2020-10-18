@@ -123,7 +123,7 @@
                                         padding: 2px;
                                         line-height: 1;
                                     "
-                                    @click="
+                                    @click.stop="
                                         EmailShowingModeList[
                                             email.key
                                         ] = EmailShowingMode.SHOW_ALL
@@ -343,7 +343,19 @@ export default defineComponent({
             }
         });
 
-        const MAX_EMAIL_CHAR_SIZE = 20;
+        const MAX_EMAIL_CHAR_SIZE = ref(20);
+
+        function changeMaxEmailCharSize(mq) {
+            if (mq.matches) {
+                MAX_EMAIL_CHAR_SIZE.value = 30;
+            } else {
+                MAX_EMAIL_CHAR_SIZE.value = 20;
+            }
+        }
+
+        const mq = window.matchMedia("(max-width: 767px)");
+        changeMaxEmailCharSize(mq);
+        mq.addListener(changeMaxEmailCharSize);
 
         const EmailShowingModeList: {
             [index: string]: EmailShowingMode;
@@ -375,7 +387,7 @@ export default defineComponent({
                     .map((email) => {
                         return formatLongString(
                             email,
-                            MAX_EMAIL_CHAR_SIZE
+                            MAX_EMAIL_CHAR_SIZE.value
                         );
                     })
                     .join(", \n"),
@@ -383,15 +395,15 @@ export default defineComponent({
                     list.length > 1
                         ? formatLongString(
                               list[0],
-                              MAX_EMAIL_CHAR_SIZE
+                              MAX_EMAIL_CHAR_SIZE.value
                           ).concat(
-                              list[0].length > MAX_EMAIL_CHAR_SIZE
+                              list[0].length > MAX_EMAIL_CHAR_SIZE.value
                                   ? ""
                                   : ", ..."
                           )
                         : formatLongString(
                               list[0],
-                              MAX_EMAIL_CHAR_SIZE
+                              MAX_EMAIL_CHAR_SIZE.value
                           ),
             }[mode];
         }
@@ -458,7 +470,7 @@ $light-color: #dee2e6;
                 background-color: #f6f8fa;
                 color: #0839de;
             }
-            &.collapse td{
+            &.collapse td {
                 border-top: none;
             }
         }
