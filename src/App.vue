@@ -381,7 +381,6 @@ export default defineComponent({
             list: string[],
             mode: EmailShowingMode
         ): string {
-            // add cache here
             return {
                 [EmailShowingMode.SHOW_ALL]: list
                     .map((email) => {
